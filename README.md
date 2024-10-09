@@ -50,7 +50,7 @@ Ensure that the following tools are installed on your system:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/real-estate-query-app.git
+git clone https://github.com/aminabedi1368/Data-Warehouses-and-Database-Management-Systems.git
 cd real-estate-query-app
 ```
 
@@ -193,7 +193,7 @@ services:
       - cassandra_spark_net
 
   app:
-    build: .
+    build: ./node-app
     container_name: real_estate_app
     ports:
       - "3000:3000"
