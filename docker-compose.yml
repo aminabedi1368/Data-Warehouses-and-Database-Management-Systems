@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  cassandra:
+    build: ./cassandra
+    image: cassandra:latest
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+#    volumes:
+#      - ./data/cassandra:/var/lib/cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: "RealEstateCluster"
+      CASSANDRA_KEYSPACE: "realestate"
+    networks:
+      - cassandra_spark_net
+#    restart: unless-stopped
+
+  spark:
+    image: docker.io/bitnami/spark:3.4
+    container_name: spark_master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+      - SPARK_MASTER_REST_ENABLED=true
+
+    ports:
+      - '8080:8080'
+      - '6066:6066'
+      - '7077:7077'
+      - '4040:4040'  # Expose Spark SQL REST API port (assuming it's on port 4040)
+    volumes:
+      - ./spark/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf
+
+    networks:
+      - cassandra_spark_net
+#    depends_on:
+#      - cassandra
+
+  spark-worker:
+      image: docker.io/bitnami/spark:3.4
+      container_name: spark_worker
+      environment:
+        - SPARK_MODE=worker
+        - SPARK_MASTER_URL=spark://spark:7077
+        - SPARK_WORKER_MEMORY=1G
+        - SPARK_WORKER_CORES=1
+        - SPARK_RPC_AUTHENTICATION_ENABLED=no
+        - SPARK_RPC_ENCRYPTION_ENABLED=no
+        - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+        - SPARK_SSL_ENABLED=no
+        - SPARK_USER=spark
+      networks:
+        - cassandra_spark_net
+      depends_on:
+        - spark
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: realestate
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - cassandra_spark_net
+  app:
+    build: ./node-app
+    container_name: node_app
+    ports:
+      - "3000:3000"
+    networks:
+      - cassandra_spark_net
+    depends_on:
+      - cassandra
+      - spark
+      - mysql
+
+
+networks:
+  cassandra_spark_net:
+    driver: bridge

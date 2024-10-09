@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Query Results</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .query-container {
+            margin-bottom: 30px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            position: relative;
+        }
+        .code-block pre {
+            margin: 0;
+            overflow-x: auto;
+        }
+        .code-buttons {
+            margin-top: 10px;
+        }
+        .code-buttons button {
+            margin-right: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="my-4">SQL Query Results</h1>
+
+    <% results.forEach(result => { %>
+        <div class="query-container">
+            <h2>File: <%= result.fileName %></h2>
+
+            <div class="code-block">
+                <pre><%= result.query %></pre>
+                <div class="code-buttons">
+                    <button class="copy-btn btn btn-light" data-clipboard-text="<%= result.query %>">
+                        <i class="fa fa-copy"></i> Copy
+                    </button>
+                    <button class="download-btn btn btn-light" onclick="downloadJSON('<%= result.fileName %>', <%= JSON.stringify(result.rows) %>)">
+                        <i class="fa fa-download"></i> Download as JSON
+                    </button>
+                </div>
+            </div>
+
+            <% if (result.rows.length > 0) { %>
+                <table class="table table-bordered mt-3">
+                    <thead>
+                    <tr>
+                        <% result.columns.forEach(column => { %>
+                            <th><%= column %></th>
+                        <% }) %>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% result.rows.forEach(row => { %>
+                        <tr>
+                            <% result.columns.forEach(column => { %>
+                                <td><%= row[column] %></td>
+                            <% }) %>
+                        </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p>No results found.</p>
+            <% } %>
+        </div>
+    <% }) %>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script>
+    // Initialize Clipboard.js
+    new ClipboardJS('.copy-btn');
+
+    // Download JSON file function
+    function downloadJSON(fileName, data) {
+        // Create a blob with JSON data
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName.replace('.sql', '.json');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+</body>
+</html>
